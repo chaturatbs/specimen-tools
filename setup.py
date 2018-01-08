@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='specimen-tools',
-    version='0.1.0', 
+    version='0.1.1', 
     description='Tools for working with Specimen data',
     author='Jose Cambronero, Phillip Stanley-Marbell',
     author_email='jcamsan@mit.edu',
