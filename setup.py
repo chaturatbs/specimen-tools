@@ -5,6 +5,7 @@ setup(
     description='Tools for working with Specimen data',
     author='Jose Cambronero, Phillip Stanley-Marbell',
     author_email='jcamsan@mit.edu',
+    url='https://github.com/josepablocam/specimen-tools',
     classifiers=[ 
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers, Color Vision Scientists, Researchers',
@@ -13,7 +14,7 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'pandas', 'matplotlib', 'colormath', 'pycountry'],
+    install_requires=['numpy', 'pandas', 'matplotlib', 'colormath', 'psycopg2', 'pycountry'],
     package_data={
         'specimen-data/specimen/resources/': ['spectral_locus.csv'],
     },
