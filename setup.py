@@ -14,7 +14,4 @@ setup(
     ],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     install_requires=['numpy', 'pandas', 'matplotlib', 'colormath', 'psycopg2', 'pycountry'],
-    package_data={
-        'specimen-tools/specimen/resources/': ['spectral_locus.csv'],
-    },
 )
