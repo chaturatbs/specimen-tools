@@ -1,0 +1,3 @@
+Code for Specimen database. This includes
+record types, json/csv parsers, a wrapper on the database connection,
+and common queries.

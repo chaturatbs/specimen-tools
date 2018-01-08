@@ -1,0 +1,3 @@
+Scripts that use the Specimen library.
+
+`python2 build_db.py` builds a database (see --help)
