@@ -19,6 +19,7 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
 import json
 import os
@@ -118,17 +119,18 @@ class SpecimenDownloader:
             except Exception as e:
                 print e.message
 
+def main(args):
+    downloader = SpecimenDownloader(args.email, args.password)
+    downloader.download(args.start_date, args.end_date, args.dir)
 
-usage = "Usage: python download_flurry.py <email> <password> <mm/dd/yyyy> <mm/dd/yyyy> [dir]"
+
 if __name__ == "__main__":
-    if len(sys.argv) < 5 or len(sys.argv) > 6:
-        print usage
-        sys.exit(1)
-    else:
-        email, password, start_date_str, end_date_str = sys.argv[1:5]
-        dir = "."
-        if len(sys.argv) == 6:
-            dir = sys.argv[5]
+    argparser = ArgumentParser(description='Download CSVs from Specimen Flurry account (requires proper authentication)')
+    argparser.add_argument('email', type=str, help='Email for Flurry account')
+    argparser.add_argument('password', type=str, help='Password for Flurry account')
+    argparser.add_argument('start_date', type=str, help='Start date for download (mm/dd/yyyy)')
+    argparser.add_argument('end_date', type=str, help='End date for download (mm/dd/yyyy)')
+    argparser.add_argument('-d', '--dir', type=str, help='Directory for download, if not provided defaults to current directory', default='.')
 
-        downloader = SpecimenDownloader(email, password)
-        downloader.download(start_date_str, end_date_str, dir)
+    args = argparser.parse_args()
+    main(args)
