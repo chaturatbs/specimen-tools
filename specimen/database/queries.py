@@ -43,7 +43,11 @@ class SpecimenQueries:
         """
         database_name = SpecimenQueries.DB_NAME if database_name is None else database_name
         self.conn = db.connect(database=database_name)
-        self.conn.autocommit = True
+        # start use of foreign keys
+        _cursor = self.conn.cursor()
+        _cursor.execute('PRAGMA foreign_keys = ON')
+        _cursor.close()
+        # self.conn.autocommit = True
         self.cache = {}
 
 
@@ -241,26 +245,58 @@ class SpecimenQueries:
 
         # filter to base data consisting of first-turns in play for known user ids
         cursor.execute("""
-        CREATE TEMP TABLE first_sels AS
-        SELECT * FROM
-            (SELECT userid, playid, id as selid, eventid,
-            target_r, target_g, target_b,
-            specimen_r, specimen_g, specimen_b,
-            target_lab_l, target_lab_a, target_lab_b,
-            specimen_lab_l, specimen_lab_a, specimen_lab_b,
-            SUM(CASE WHEN id >=0 THEN 1 else 0 END) OVER (PARTITION BY playid ORDER BY eventid) as sel_ct,
-            is_first_pick,
-            target_h,
-            target_s,
-            target_v,
-            specimen_h,
-            correct
-            %s
-            FROM
+        -- compute the smallest eventid associated with each playid
+        CREATE TEMP TABLE sel_cts AS
+            SELECT MIN(eventid) as min_event_id
+            FROM selectionevents
+            where userid <> 1
+            GROUP BY playid;
+
+        -- use this min eventid to select the first choice in each round
+        CREATE TEMP TABLE test_sels AS
+          SELECT 
+              userid, playid, id as selid, eventid,
+              target_r, target_g, target_b,
+              specimen_r, specimen_g, specimen_b,
+              target_lab_l, target_lab_a, target_lab_b,
+              specimen_lab_l, specimen_lab_a, specimen_lab_b,
+              is_first_pick,
+              target_h,
+              target_s,
+              target_v,
+              specimen_h,
+              correct
+              %s
+          FROM 
             selectionevents
-            WHERE userid <> %d) d
-        WHERE sel_ct = 1
-        """ % (added, unknown_user_id))
+            INNER JOIN sel_cts 
+            ON selectionevents.eventid = sel_cts.min_event_id
+          WHERE userid <> %d;
+        """  % (added, unknown_user_id)
+        )
+        
+        
+        # cursor.execute("""
+        # CREATE TEMP TABLE first_sels AS
+        # SELECT * FROM
+        #     (SELECT userid, playid, id as selid, eventid,
+        #     target_r, target_g, target_b,
+        #     specimen_r, specimen_g, specimen_b,
+        #     target_lab_l, target_lab_a, target_lab_b,
+        #     specimen_lab_l, specimen_lab_a, specimen_lab_b,
+        #     SUM(CASE WHEN id >=0 THEN 1 else 0 END) OVER (PARTITION BY playid ORDER BY eventid) as sel_ct,
+        #     is_first_pick,
+        #     target_h,
+        #     target_s,
+        #     target_v,
+        #     specimen_h,
+        #     correct
+        #     %s
+        #     FROM
+        #     selectionevents
+        #     WHERE userid <> %d) d
+        # WHERE sel_ct = 1
+        # """ % (added, unknown_user_id))
 
         # restrict to subset of users with at least min_turns
         if min_turns:
