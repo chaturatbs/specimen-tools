@@ -94,10 +94,10 @@ class User(Record):
     """ Specimen game user """
     cache = {}
     table =  "Users"
-    enumTypes = "CREATE TYPE GenderEnum as ENUM ('male', 'female')"
+    # enumTypes = "CREATE TYPE GenderEnum as ENUM ('male', 'female')"
     charLimit = 40
     #schema = "(id SERIAL PRIMARY KEY, uniqueId CHAR(%s) UNIQUE, birthYear INTEGER, gender GenderEnum)" % charLimit
-    schema = "(id PRIMARY KEY, uniqueId TEXT UNIQUE, birthYear INTEGER, gender TEXT)"
+    schema = "(id INTEGER PRIMARY KEY, uniqueId TEXT UNIQUE, birthYear INTEGER, gender TEXT)"
     canFail = True
     # stub for data that is not associated with any user, gets assigned to this Unknown user
     null = "Unknown"
@@ -109,7 +109,8 @@ class User(Record):
         self.gender = gender.lower() if gender and gender.lower() in ['male', 'female'] else None
 
     def insertionString(self, cursor):
-        payload = "(default, '%s', %s, '%s')" % (self.uniqueId, self.birthYear, self.gender)
+        # payload = "(default, '%s', %s, '%s')" % (self.uniqueId, self.birthYear, self.gender)
+        payload = "(None, '%s', %s, '%s')" % (self.uniqueId, self.birthYear, self.gender)
         return str(payload)
 
     @staticmethod
@@ -133,7 +134,7 @@ class Device(Record):
     table = "Devices"
     charLimit = 100
     #schema = "(id SERIAL PRIMARY KEY, name VARCHAR(%s) UNIQUE)" % charLimit
-    schema = "(id PRIMARY KEY, name TEXT UNIQUE)"
+    schema = "(id INTEGER PRIMARY KEY, name TEXT UNIQUE)"
     canFail = True
     null = "Unknown"
 
@@ -142,7 +143,8 @@ class Device(Record):
         self.deviceName = Device.sanitize(deviceName)
 
     def insertionString(self, cursor):
-        return "(default, '%s')" % self.deviceName
+        # return "(default, '%s')" % self.deviceName
+        return "(None, '%s')" % self.deviceName
 
     @staticmethod
     def resolveRef(cursor, target):
@@ -169,7 +171,7 @@ class Carrier(Record):
     table = "Carriers"
     charLimit = 100
     #schema = "(id SERIAL PRIMARY KEY, name VARCHAR(%s) UNIQUE)" % charLimit
-    schema = "(id PRIMARY KEY, name TEXT UNIQUE)"
+    schema = "(id INTEGER PRIMARY KEY, name TEXT UNIQUE)"
     canFail = True
     null = "Unknown"
 
@@ -178,7 +180,9 @@ class Carrier(Record):
         self.carrierName = Carrier.sanitize(carrierName)
 
     def insertionString(self, cursor):
-        return "(default, '%s')" % self.carrierName
+        # return "(default, '%s')" % self.carrierName
+        return "(None, '%s')" % self.carrierName
+        
 
     @staticmethod
     def resolveRef(cursor, target):
@@ -335,7 +339,7 @@ class SelectionEvent(Record):
     # """
     schema =  """
         (
-        id PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         userId INTEGER REFERENCES Users(id) ON DELETE CASCADE,
         eventId INTEGER REFERENCES Events(id) ON DELETE CASCADE,
         playId INTEGER,
@@ -394,7 +398,34 @@ class SelectionEvent(Record):
 
     def insertionString(self, cursor):
         self.getForeignKeys(cursor)
-        payload = "(default, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" % (
+        # payload = "(default, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" % (
+        #     self.userId,
+        #     self.eventId,
+        #     self.playId,
+        #     self.specimen_r,
+        #     self.specimen_g,
+        #     self.specimen_b,
+        #     self.target_r,
+        #     self.target_g,
+        #     self.target_b,
+        #     self.specimen_h,
+        #     self.specimen_s,
+        #     self.specimen_v,
+        #     self.target_h,
+        #     self.target_s,
+        #     self.target_v,
+        #     self.specimen_lab_l,
+        #     self.specimen_lab_a,
+        #     self.specimen_lab_b,
+        #     self.target_lab_l,
+        #     self.target_lab_a,
+        #     self.target_lab_b,
+        #     self.correct,
+        #     self.pos_x,
+        #     self.pos_y,
+        #     self.is_first_pick,
+        # )
+        payload = "(None, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" % (
             self.userId,
             self.eventId,
             self.playId,
@@ -438,7 +469,7 @@ class PurchaseEvent(Record):
     #     itemPurchased VARCHAR(40)
     #     )"""
     schema = """(
-        id PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         eventId INTEGER REFERENCES Events(id) ON DELETE CASCADE,
         cost INTEGER,
         itemPurchased TEXT
@@ -452,7 +483,8 @@ class PurchaseEvent(Record):
         self.itemPurchased = itemPurchased
 
     def insertionString(self, cursor):
-        payload ="(default, %s, %s, '%s')" % (self.eventId, self.cost, self.itemPurchased,)
+        # payload ="(default, %s, %s, '%s')" % (self.eventId, self.cost, self.itemPurchased,)
+        payload = "(None, %s, %s, '%s')" % (self.eventId, self.cost, self.itemPurchased,)
         return str(payload)
 
     @staticmethod
@@ -493,7 +525,8 @@ class LevelEvent(Record):
         self.boosterUsed = boosterUsed
 
     def insertionString(self, cursor):
-        payload ="(default, %s, '%s', %s, %s, %s)" % (self.eventId, self.spectrum, self.level, self.score, self.boosterUsed,)
+        # payload ="(default, %s, '%s', %s, %s, %s)" % (self.eventId, self.spectrum, self.level, self.score, self.boosterUsed,)
+        payload ="(None, %s, '%s', %s, %s, %s)" % (self.eventId, self.spectrum, self.level, self.score, self.boosterUsed,)
         return str(payload)
 
     @staticmethod

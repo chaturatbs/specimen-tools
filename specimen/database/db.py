@@ -161,12 +161,12 @@ class Database:
         for recordType in self.recordTypes:
             table = recordType.table
             print "Creating table %s" % table
-            # try to write any relevant enumeration datatypes
-            try:
-                cursor.execute(recordType.enumTypes)
-            except AttributeError:
-                # not all tables require enumeration types
-                pass
+            # # try to write any relevant enumeration datatypes
+            # try:
+            #     cursor.execute(recordType.enumTypes)
+            # except AttributeError:
+            #     # not all tables require enumeration types
+            #     pass
             cursor.execute("CREATE TABLE %s %s" % (table, recordType.schema))
             if recordType.init():
                 # some tables may need an initial record for stub values
@@ -201,7 +201,7 @@ class Database:
                 for (name, _) in recordType.indices:
                     print "Dropping index %s" % name
                     cursor.execute("DROP INDEX %s" % name)
-            except (AttributeError, dbms.ProgrammingError):
+            except (AttributeError, dbms.ProgrammingError, dbms.OperationalError):
                 # didn't have indices or already declared
                 pass
         cursor.close()

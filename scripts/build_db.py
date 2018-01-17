@@ -19,7 +19,6 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 from argparse import ArgumentParser
 import os
 import subprocess
@@ -40,11 +39,7 @@ def populate(db_name, data_dir, bufferSize, cacheLimit):
     print "Writing to Database(%s) with buffer limit = %s and cache limit = %s" % (db_name, bufferSize, cacheLimit)
 
     rectypes = [User, Device, Carrier, Session, Event, SelectionEvent, PurchaseEvent, LevelEvent]
-    try:
-        db = db_def.Database(db_name, rectypes, bufferSize, cacheLimit)
-    except Exception as e:
-        import pdb
-        pdb.post_mortem()
+    db = db_def.Database(db_name, rectypes, bufferSize, cacheLimit)
     # try to create tables if hasn't happened yet
     try:
         db.create_tables()
