@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='specimen-tools',
-    version='0.1.2', 
+    version='0.1.3', 
     description='Tools for working with Specimen data',
     author='Jose Cambronero, Phillip Stanley-Marbell',
     author_email='jcamsan@mit.edu',
@@ -13,6 +13,6 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['numpy', 'pandas', 'matplotlib', 'colormath', 'psycopg2', 'pycountry'],
+    install_requires=['numpy', 'pandas', 'matplotlib', 'colormath', 'pycountry'],
     include_package_data=True,
 )

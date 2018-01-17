@@ -25,7 +25,7 @@ from collections import deque
 import datetime
 import sys
 
-import psycopg2 as dbms
+#import psycopg2 as dbms
 import sqlite3 as dbms
 
 from queries import SpecimenQueries

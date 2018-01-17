@@ -31,15 +31,20 @@ from specimen.database.dbtypes import *
 
 
 def create_db(name):
-    subprocess.call(['psql', '-c', 'CREATE DATABASE %s' % name])
-    subprocess.call(['psql', '-c', "ALTER DATABASE %s SET log_statement='none'" % name])
+    pass
+    # subprocess.call(['psql', '-c', 'CREATE DATABASE %s' % name])
+    # subprocess.call(['psql', '-c', "ALTER DATABASE %s SET log_statement='none'" % name])
 
 def populate(db_name, data_dir, bufferSize, cacheLimit):
     print "Parsing files in directory %s " % data_dir
     print "Writing to Database(%s) with buffer limit = %s and cache limit = %s" % (db_name, bufferSize, cacheLimit)
 
     rectypes = [User, Device, Carrier, Session, Event, SelectionEvent, PurchaseEvent, LevelEvent]
-    db = db_def.Database(db_name, rectypes, bufferSize, cacheLimit)
+    try:
+        db = db_def.Database(db_name, rectypes, bufferSize, cacheLimit)
+    except Exception as e:
+        import pdb
+        pdb.post_mortem()
     # try to create tables if hasn't happened yet
     try:
         db.create_tables()
@@ -79,7 +84,7 @@ def populate(db_name, data_dir, bufferSize, cacheLimit):
     # recalculate database stats
     db.build_stats()
     # remove duplicate records and sessions
-    db.remove_duplicate_sessions()
+    # db.remove_duplicate_sessions()
 
 def main(data_dir, db_name, _buffer, cache):
     create_db(db_name)
