@@ -22,7 +22,6 @@
 
 import numpy as np
 import pandas as pd
-#import psycopg2 as db
 import sqlite3 as db
 
 import dbtypes
@@ -36,19 +35,18 @@ class SpecimenQueries:
     """
     DB_NAME = "specimen"
 
-    def __init__(self, database_name=None):
+    def __init__(self, database_path=None):
         """
         Provides wrapper for queries. Caches queries where possible.
 
-        :param database_name: Name of postgres database
+        :param database_path: Path to SQLITE database file
         """
-        database_name = SpecimenQueries.DB_NAME if database_name is None else database_name
-        self.conn = db.connect(database=database_name)
+        self.database_path = database_path
+        self.conn = db.connect(database=self.database_path)
         # start use of foreign keys
         _cursor = self.conn.cursor()
         _cursor.execute('PRAGMA foreign_keys = ON')
         _cursor.close()
-        # self.conn.autocommit = True
         self.cache = {}
 
 
@@ -106,21 +104,21 @@ class SpecimenQueries:
         cursor.execute(
             """
             CREATE TEMP TABLE user_country_freqs AS
-            select userid, country, count(*)
+            select userid, country, count(*) as ct
             from sessions where userid <> %d and country is not null
-            group by userid, country;
+            group by userid, country
             """ % unknown_user_id
         )
         # assigns each user to country with most counts
         cursor.execute(
            """
           CREATE TEMP TABLE user_and_likely_country AS
-          SELECT DISTINCT ON (userid)  *
+          SELECT *
           FROM
-          user_country_freqs JOIN (SELECT userid, max(count) FROM user_country_freqs GROUP BY userid) max_cts
+          user_country_freqs JOIN (SELECT userid, max(ct) as max_ct FROM user_country_freqs GROUP BY userid) max_cts
           USING (userid)
-          WHERE user_country_freqs.count = max_cts.max
-          ORDER BY userid;
+          WHERE user_country_freqs.ct = max_cts.max_ct
+          GROUP BY userid
           """
         )
         cursor.close()
@@ -245,16 +243,20 @@ class SpecimenQueries:
         unknown_user_id = self._get_unknown_userid()
 
         # filter to base data consisting of first-turns in play for known user ids
+        print "Filtering down to first-turns in a play"
         cursor.execute("""
         -- compute the smallest eventid associated with each playid
         CREATE TEMP TABLE sel_cts AS
             SELECT MIN(eventid) as min_event_id
             FROM selectionevents
-            where userid <> 1
-            GROUP BY playid;
+            where userid <> %d
+            GROUP BY playid
+        """ % unknown_user_id)    
 
+        print "Retrieving selection information for those turns"
+        cursor.execute("""
         -- use this min eventid to select the first choice in each round
-        CREATE TEMP TABLE test_sels AS
+        CREATE TEMP TABLE first_sels AS
           SELECT 
               userid, playid, id as selid, eventid,
               target_r, target_g, target_b,
@@ -272,32 +274,9 @@ class SpecimenQueries:
             selectionevents
             INNER JOIN sel_cts 
             ON selectionevents.eventid = sel_cts.min_event_id
-          WHERE userid <> %d;
+          WHERE userid <> %d
         """  % (added, unknown_user_id)
         )
-        
-        
-        # cursor.execute("""
-        # CREATE TEMP TABLE first_sels AS
-        # SELECT * FROM
-        #     (SELECT userid, playid, id as selid, eventid,
-        #     target_r, target_g, target_b,
-        #     specimen_r, specimen_g, specimen_b,
-        #     target_lab_l, target_lab_a, target_lab_b,
-        #     specimen_lab_l, specimen_lab_a, specimen_lab_b,
-        #     SUM(CASE WHEN id >=0 THEN 1 else 0 END) OVER (PARTITION BY playid ORDER BY eventid) as sel_ct,
-        #     is_first_pick,
-        #     target_h,
-        #     target_s,
-        #     target_v,
-        #     specimen_h,
-        #     correct
-        #     %s
-        #     FROM
-        #     selectionevents
-        #     WHERE userid <> %d) d
-        # WHERE sel_ct = 1
-        # """ % (added, unknown_user_id))
 
         # restrict to subset of users with at least min_turns
         if min_turns:

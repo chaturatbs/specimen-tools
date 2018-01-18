@@ -47,10 +47,6 @@ class Database:
         _cursor = self.conn.cursor()
         _cursor.execute('PRAGMA foreign_keys = ON')
         _cursor.close()
-        # psycopg2 (and it seems postgres) don't support read uncommitted (which we need
-        # to lookup reference values...)
-        # TODO: fix this...having it on autocommit makes this not really great to use
-        # self.conn.autocommit = True
         self.cacheLimit = cacheLimit
         # object for specimen database queries (e.g. for unknown user id)
         self.specimen_queries = SpecimenQueries(database_name=name)
@@ -161,12 +157,6 @@ class Database:
         for recordType in self.recordTypes:
             table = recordType.table
             print "Creating table %s" % table
-            # # try to write any relevant enumeration datatypes
-            # try:
-            #     cursor.execute(recordType.enumTypes)
-            # except AttributeError:
-            #     # not all tables require enumeration types
-            #     pass
             cursor.execute("CREATE TABLE %s %s" % (table, recordType.schema))
             if recordType.init():
                 # some tables may need an initial record for stub values
@@ -222,38 +212,14 @@ class Database:
         """
         print "Removing duplicate sessions and related records"
         unknown_user_id = self.specimen_queries._get_unknown_userid()
-        
-        # rm_query = """
-        # CREATE TEMP TABLE duplicated_sessions AS
-        # SELECT id FROM
-        # (
-        #     SELECT id,
-        #     SUM(CASE WHEN TRUE THEN 1 else 0 END) OVER
-        #     (PARTITION BY starttimestamp, sessionlength, userid, country ORDER BY id) as iter
-        #     FROM
-        #     sessions INNER JOIN
-        #     (
-        #         SELECT
-        #         starttimestamp, sessionlength, userid, country
-        #         FROM sessions
-        #         WHERE userid <> %d
-        #         GROUP BY starttimestamp, sessionlength, userid, country HAVING count(*) > 1
-        #     ) repeated -- find sessions that are repeated
-        #     USING (starttimestamp, sessionlength, userid, country)
-        #     WHERE sessions.userid <> %d
-        # ) ordered_repeated -- order sessions, so that we delete anything that is not the first occurrence
-        # WHERE iter > 1;
-        # -- perform actual deletion, related records are deleted by cascading deletes
-        # DELETE FROM sessions WHERE id in (SELECT id from duplicated_sessions);
-        # """ % (unknown_user_id, unknown_user_id)
+
         rm_query = """
             -- collect the smallest session id associated with
             -- a start timestamp, session length, user id and country
             -- use this to remove all other session ids for that same
             -- group, as those are duplicate sessions
-
-            CREATE TEMP TABLE unique_sessions AS
-              SELECT MIN(id) as min_session_id
+            CREATE TEMP TABLE relevant_sessions AS 
+              SELECT id, starttimestamp, sessionlength, userid, country
               FROM
               sessions INNER JOIN
               (
@@ -264,13 +230,21 @@ class Database:
                   GROUP BY starttimestamp, sessionlength, userid, country HAVING count(*) > 1
               ) repeated -- find sessions that are repeated
               USING (starttimestamp, sessionlength, userid, country)
-              WHERE sessions.userid <> 1
-              GROUP BY starttimestamp, sessionlength, userid, country;
+              WHERE sessions.userid <> %d;
+             
+            CREATE TEMP TABLE min_sessions AS
+               SELECT MIN(id) as min_session_id
+               FROM relevant_sessions 
+               GROUP BY starttimestamp, sessionlength, userid, country;
+            
+            CREATE TEMP TABLE duplicate_sessions AS
+                SELECT id from relevant_sessions
+                WHERE id NOT IN (select min_session_id FROM min_sessions);
 
-            DELETE FROM sessions WHERE id NOT IN (SELECT min_session_id from unique_sessions);
+            DELETE FROM sessions WHERE id IN (SELECT id FROM duplicate_sessions);
         """ % (unknown_user_id, unknown_user_id)
         cursor = self.conn.cursor()
-        cursor.execute(rm_query)
+        cursor.executescript(rm_query)
         cursor.close()
 
     def clear(self):
