@@ -131,6 +131,19 @@ class SpecimenQueries:
         self.cache[key] = result.copy()
         return result
 
+    def create_reference_ids_table(self, vals, table_name='_ref'):
+        """
+        Create a temporary reference table by inserting values.
+        This is used to speed up sqlite queries that are too slow when given
+        the list directly in the query text (most likely a parsing issue?).
+        """
+        # remove existing
+        self._drop_tables([table_name])
+        cursor = self.conn.cursor()
+        cursor.execute('CREATE TEMP TABLE %s (id INTEGER)' % table_name)
+        for i, v in enumerate(vals):
+            cursor.execute('INSERT INTO %s VALUES(%d)' % (table_name, v))
+
 
     def get_time_offset(self, event_ids, get_extra_info=True, use_cache=True):
         """
@@ -143,29 +156,32 @@ class SpecimenQueries:
         if event_ids is None:
             raise ValueError('Must provide event ids ts')
 
-        if not isinstance(event_ids, str):
-            # if not a string, we assume we got an iterable with actual ids
-            event_ids = utils.to_csv_str(event_ids)
-
-        key = ('timestamps', event_ids)
+        key = ('timestamps', tuple(event_ids), get_extra_info)
         if use_cache and key in self.cache:
             return self.cache[key].copy()
 
+        # create event id references to query
+        self.create_reference_ids_table(event_ids, table_name='_ref')
+
         ts_query =  """
-        SELECT id, offsettimestamp, event FROM events
-        WHERE id IN (%s) AND offsettimestamp >= 0
+        SELECT events.id as id, offsettimestamp, event FROM events, _ref
+        WHERE events.id = _ref.id AND offsettimestamp >= 0
         """
 
-        ts = read_sql(ts_query % event_ids, self.conn)
+        ts = read_sql(ts_query, self.conn)
 
         # adds additional information such as user id, and session id for matching up timestamps
         if get_extra_info:
             extra_info_query = """
-            SELECT sessions.userid, events.id AS id, sessions.id AS sessionid
-            FROM events, sessions
-            WHERE events.sessionid = sessions.id AND events.id IN (%s)
+            SELECT
+                sessions.userid,
+                events.id AS id,
+                sessions.id AS sessionid
+            FROM events, sessions, _ref
+            WHERE events.id = _ref.id AND
+            events.sessionid = sessions.id
             """
-            extra_info_df = read_sql(extra_info_query % event_ids, self.conn)
+            extra_info_df = read_sql(extra_info_query, self.conn)
             ts = ts.merge(extra_info_df, how='left', on='id')
 
         self.cache[key] = ts.copy()
@@ -178,24 +194,26 @@ class SpecimenQueries:
         """
         if event_ids is None:
             raise ValueError('Must provide event ids')
-        if not isinstance(event_ids, str):
-            event_ids = utils.to_csv_str(event_ids)
 
-        key = ('devices', event_ids)
+        # cast to tuple so that can be hashed
+        key = ('devices', tuple(event_ids))
         if use_cache and key in self.cache:
             return self.cache[key].copy()
+
+        # create event id references to query
+        self.create_reference_ids_table(event_ids, table_name='_ref')
 
         devices_query = """
         select
         devices.name as device_name,
         events.id as eventid
         FROM
-        sessions, events, devices
+        sessions, events, devices, _ref
         WHERE
-        events.id in (%s) AND
+        events.id = _ref.id AND
         sessions.id = events.sessionid AND
         sessions.deviceid = devices.id
-        """ % event_ids
+        """
 
         devices_df = read_sql(devices_query, self.conn)
         self.cache[key] = devices_df.copy()
@@ -255,13 +273,13 @@ class SpecimenQueries:
             FROM selectionevents
             where userid <> %d
             GROUP BY playid
-        """ % unknown_user_id)    
+        """ % unknown_user_id)
 
         print "Retrieving selection information for those turns"
         cursor.execute("""
         -- use this min eventid to select the first choice in each round
         CREATE TEMP TABLE first_sels AS
-          SELECT 
+          SELECT
               userid, playid, id as selid, eventid,
               target_r, target_g, target_b,
               specimen_r, specimen_g, specimen_b,
@@ -274,9 +292,9 @@ class SpecimenQueries:
               specimen_h,
               correct
               %s
-          FROM 
+          FROM
             selectionevents
-            INNER JOIN sel_cts 
+            INNER JOIN sel_cts
             ON selectionevents.eventid = sel_cts.min_event_id
           WHERE userid <> %d
         """  % (added, unknown_user_id)
