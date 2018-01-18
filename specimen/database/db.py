@@ -265,7 +265,7 @@ class Database:
               ) repeated -- find sessions that are repeated
               USING (starttimestamp, sessionlength, userid, country)
               WHERE sessions.userid <> 1
-              GROUP BY starttimestamp, sessionlength, userid, country
+              GROUP BY starttimestamp, sessionlength, userid, country;
 
             DELETE FROM sessions WHERE id NOT IN (SELECT min_session_id from unique_sessions);
         """ % (unknown_user_id, unknown_user_id)
