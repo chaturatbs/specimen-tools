@@ -2,7 +2,7 @@
 
 `specimen-tools` contains code related to the iOS application 
 [Specimen](https://itunes.apple.com/us/app/specimen-a-game-about-color/).
-This can be used to: build a database of Specimen data, query it, and
+This can be used to: build a SQLite database of Specimen data, query it, and
 includes additional utilities for simple things like plotting common
 color-related data.
 
@@ -16,9 +16,14 @@ related to research or open-source experimentation are encouraged.
 `specimen-tools` assumes you have access to:
 
 * Python 2.*
-* Postgres
+* SQLite
 
-The remainder of Python libraries required are installed automatically.
+Most *nix systems come with SQLite installed, and should satisfy this
+requirement with no additional work. If this is not the case, please
+see [SQlite](https://sqlite.org/) for the appropriate way to install 
+on your system.
+
+The necessary Python libraries are installed automatically.
 
 
 # Installation and Basic Usage
@@ -41,11 +46,9 @@ This installs the `specimen` module. Note that this does not build
 the database. In order to do so, you need to explicitly execute
 `specimen-tools/scripts/build_db.py` (which is only included
 in the repository). Additionally, you will need to have access
-to the raw Specimen data to build the database.
-
-The default name for the Specimen database is `specimen` and is
-used during building. If you want another name, take a look at
-`python scripts/build_db.py --help`.
+to the raw Specimen data to build the database. The database
+built is a SQLite database, which means it is serverless and
+consists of a single file.
 
 
 ## Acknowledgements
