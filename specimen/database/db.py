@@ -25,7 +25,8 @@ from collections import deque
 import datetime
 import sys
 
-import psycopg2 as dbms
+#import psycopg2 as dbms
+import sqlite3 as dbms
 
 from queries import SpecimenQueries
 
@@ -42,10 +43,10 @@ class Database:
         self.bufferSize = bufferSize
         # database must already exist
         self.conn = dbms.connect(database=name)
-        # psycopg2 (and it seems postgres) don't support read uncommitted (which we need
-        # to lookup reference values...)
-        # TODO: fix this...having it on autocommit makes this not really great to use
-        self.conn.autocommit = True
+        # turn on foreign keys
+        _cursor = self.conn.cursor()
+        _cursor.execute('PRAGMA foreign_keys = ON')
+        _cursor.close()
         self.cacheLimit = cacheLimit
         # object for specimen database queries (e.g. for unknown user id)
         self.specimen_queries = SpecimenQueries(database_name=name)
@@ -94,13 +95,13 @@ class Database:
         recType = batch[0]
         tuples = [ record.insertionString(cursor) for record in batch ]
         # replace None in tuples with NULL
-        clean_tuples = [ self.remove_None(tuple) for tuple in tuples ]
+        clean_tuples = [ self.remove_None(_tuple) for _tuple in tuples ]
         # some record types may fail if they have integrity constraints
         if recType.canFail:
-            for tuple in clean_tuples:
+            for _tuple in clean_tuples:
                 try:
                     # tuples that may fail need to be written tuple at a time rather than in bulk
-                    self.__write(cursor, recType.table, tuple)
+                    self.__write(cursor, recType.table, _tuple)
                 except dbms.IntegrityError:
                     # ok to fail for these, allows us to just try to insert
                     # for records with unique columns and offload error handling to dbms
@@ -156,12 +157,6 @@ class Database:
         for recordType in self.recordTypes:
             table = recordType.table
             print "Creating table %s" % table
-            # try to write any relevant enumeration datatypes
-            try:
-                cursor.execute(recordType.enumTypes)
-            except AttributeError:
-                # not all tables require enumeration types
-                pass
             cursor.execute("CREATE TABLE %s %s" % (table, recordType.schema))
             if recordType.init():
                 # some tables may need an initial record for stub values
@@ -196,7 +191,7 @@ class Database:
                 for (name, _) in recordType.indices:
                     print "Dropping index %s" % name
                     cursor.execute("DROP INDEX %s" % name)
-            except (AttributeError, dbms.ProgrammingError):
+            except (AttributeError, dbms.ProgrammingError, dbms.OperationalError):
                 # didn't have indices or already declared
                 pass
         cursor.close()
@@ -217,32 +212,39 @@ class Database:
         """
         print "Removing duplicate sessions and related records"
         unknown_user_id = self.specimen_queries._get_unknown_userid()
-        
+
         rm_query = """
-        CREATE TEMP TABLE duplicated_sessions AS
-        SELECT id FROM
-        (
-            SELECT id,
-            SUM(CASE WHEN TRUE THEN 1 else 0 END) OVER
-            (PARTITION BY starttimestamp, sessionlength, userid, country ORDER BY id) as iter
-            FROM
-            sessions INNER JOIN
-            (
-                SELECT
-                starttimestamp, sessionlength, userid, country
-                FROM sessions
-                WHERE userid <> %d
-                GROUP BY starttimestamp, sessionlength, userid, country HAVING count(*) > 1
-            ) repeated -- find sessions that are repeated
-            USING (starttimestamp, sessionlength, userid, country)
-            WHERE sessions.userid <> %d
-        ) ordered_repeated -- order sessions, so that we delete anything that is not the first occurrence
-        WHERE iter > 1;
-        -- perform actual deletion, related records are deleted by cascading deletes
-        DELETE FROM sessions WHERE id in (SELECT id from duplicated_sessions);
+            -- collect the smallest session id associated with
+            -- a start timestamp, session length, user id and country
+            -- use this to remove all other session ids for that same
+            -- group, as those are duplicate sessions
+            CREATE TEMP TABLE relevant_sessions AS 
+              SELECT id, starttimestamp, sessionlength, userid, country
+              FROM
+              sessions INNER JOIN
+              (
+                  SELECT
+                  starttimestamp, sessionlength, userid, country
+                  FROM sessions
+                  WHERE userid <> %d
+                  GROUP BY starttimestamp, sessionlength, userid, country HAVING count(*) > 1
+              ) repeated -- find sessions that are repeated
+              USING (starttimestamp, sessionlength, userid, country)
+              WHERE sessions.userid <> %d;
+             
+            CREATE TEMP TABLE min_sessions AS
+               SELECT MIN(id) as min_session_id
+               FROM relevant_sessions 
+               GROUP BY starttimestamp, sessionlength, userid, country;
+            
+            CREATE TEMP TABLE duplicate_sessions AS
+                SELECT id from relevant_sessions
+                WHERE id NOT IN (select min_session_id FROM min_sessions);
+
+            DELETE FROM sessions WHERE id IN (SELECT id FROM duplicate_sessions);
         """ % (unknown_user_id, unknown_user_id)
         cursor = self.conn.cursor()
-        cursor.execute(rm_query)
+        cursor.executescript(rm_query)
         cursor.close()
 
     def clear(self):

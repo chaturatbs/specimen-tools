@@ -215,7 +215,7 @@ class JsonSpecimenParser(AbstractSpecimenParser):
         specimen_rgb = map(float, params['specimen_color'].strip("()").split(","))
         specimen_hsv = colorsys.rgb_to_hsv(*specimen_rgb)
         specimen_lab = utils.rgb_to_lab(*specimen_rgb)
-        correct = False
+        correct = 0
         try:
             target_rgb = map(float, params['target_color'].strip("()").split(","))
             target_hsv = colorsys.rgb_to_hsv(*target_rgb)
@@ -225,8 +225,8 @@ class JsonSpecimenParser(AbstractSpecimenParser):
             target_rgb = specimen_rgb
             target_hsv = specimen_hsv
             target_lab = specimen_lab
-            correct = True
-        is_first_pick = self.prev_target_color != target_rgb
+            correct = 1
+        is_first_pick = 1 if self.prev_target_color != target_rgb else 0
         # update the target color information
         self.prev_target_color = target_rgb
         pos_x = params['position_x']
@@ -244,7 +244,7 @@ class JsonSpecimenParser(AbstractSpecimenParser):
         spectrum = self.get_first_not_missing(['spectrum', 'Spectrum'], params).lower()
         level = params['level']
         score = self.get_first_not_missing(['score', 'Score'], params)
-        boosterUsed = params['Booster Used'] == '1'
+        boosterUsed = 1 if params['Booster Used'] == '1' else 0
         return LevelEvent(eventId, spectrum, level, score, boosterUsed)
 
 
@@ -392,7 +392,7 @@ class CsvSpecimenParser(AbstractSpecimenParser):
         specimen_rgb = map(float, params['specimen_color'].strip("()").split(","))
         specimen_hsv = colorsys.rgb_to_hsv(*specimen_rgb)
         specimen_lab = utils.rgb_to_lab(*specimen_rgb)
-        correct = False
+        correct = 0
         try:
             target_rgb = map(float, params['target_color'].strip("()").split(","))
             target_hsv = colorsys.rgb_to_hsv(*target_rgb)
@@ -402,8 +402,8 @@ class CsvSpecimenParser(AbstractSpecimenParser):
             target_rgb = specimen_rgb
             target_hsv = specimen_hsv
             target_lab = specimen_lab
-            correct = True
-        is_first_pick = self.prev_target_color != target_rgb
+            correct = 1
+        is_first_pick = 1 if self.prev_target_color != target_rgb else 0
         # update the target color information
         self.prev_target_color = target_rgb
         pos_x = params['position_x']
@@ -422,7 +422,7 @@ class CsvSpecimenParser(AbstractSpecimenParser):
         spectrum = spectrum.lower() if spectrum else spectrum
         level = params['level']
         score = self.get_first_not_missing(['score', 'Score'], params)
-        boosterUsed = params['Booster Used'] == '1'
+        boosterUsed = 1 if params['Booster Used'] == '1' else 0
         return LevelEvent(eventId, spectrum, level, score, boosterUsed)
 
     def parse_params(self, line):

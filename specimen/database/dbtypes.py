@@ -24,7 +24,7 @@ from abc import ABCMeta, abstractmethod
 from collections import deque
 import sys
 
-import psycopg2 as dbms
+import sqlite3 as dbms
 
 
 class Record(object):
@@ -93,9 +93,8 @@ class User(Record):
     """ Specimen game user """
     cache = {}
     table =  "Users"
-    enumTypes = "CREATE TYPE GenderEnum as ENUM ('male', 'female')"
     charLimit = 40
-    schema = "(id SERIAL PRIMARY KEY, uniqueId CHAR(%s) UNIQUE, birthYear INTEGER, gender GenderEnum)" % charLimit
+    schema = "(id INTEGER PRIMARY KEY, uniqueId TEXT UNIQUE, birthYear INTEGER, gender TEXT)"
     canFail = True
     # stub for data that is not associated with any user, gets assigned to this Unknown user
     null = "Unknown"
@@ -107,7 +106,7 @@ class User(Record):
         self.gender = gender.lower() if gender and gender.lower() in ['male', 'female'] else None
 
     def insertionString(self, cursor):
-        payload = "(default, '%s', %s, '%s')" % (self.uniqueId, self.birthYear, self.gender)
+        payload = "(None, '%s', %s, '%s')" % (self.uniqueId, self.birthYear, self.gender)
         return str(payload)
 
     @staticmethod
@@ -130,7 +129,7 @@ class Device(Record):
     cache = {}
     table = "Devices"
     charLimit = 100
-    schema = "(id SERIAL PRIMARY KEY, name VARCHAR(%s) UNIQUE)" % charLimit
+    schema = "(id INTEGER PRIMARY KEY, name TEXT UNIQUE)"
     canFail = True
     null = "Unknown"
 
@@ -139,7 +138,7 @@ class Device(Record):
         self.deviceName = Device.sanitize(deviceName)
 
     def insertionString(self, cursor):
-        return "(default, '%s')" % self.deviceName
+        return "(None, '%s')" % self.deviceName
 
     @staticmethod
     def resolveRef(cursor, target):
@@ -165,7 +164,7 @@ class Carrier(Record):
     cache = {}
     table = "Carriers"
     charLimit = 100
-    schema = "(id SERIAL PRIMARY KEY, name VARCHAR(%s) UNIQUE)" % charLimit
+    schema = "(id INTEGER PRIMARY KEY, name TEXT UNIQUE)"
     canFail = True
     null = "Unknown"
 
@@ -174,7 +173,8 @@ class Carrier(Record):
         self.carrierName = Carrier.sanitize(carrierName)
 
     def insertionString(self, cursor):
-        return "(default, '%s')" % self.carrierName
+        return "(None, '%s')" % self.carrierName
+        
 
     @staticmethod
     def resolveRef(cursor, target):
@@ -201,10 +201,14 @@ class Session(Record):
         (
         id INTEGER PRIMARY KEY,
         userId INTEGER REFERENCES Users(id) ON DELETE CASCADE,
-        startTimestamp BIGINT, sessionLength BIGINT,
-        version SMALLINT, country CHAR(2),
-        carrierId INTEGER REFERENCES Carriers(id), deviceId INTEGER REFERENCES Devices(id),
-        longitude REAL, latitude REAL
+        startTimestamp INTEGER, 
+        sessionLength INTEGER,
+        version INTEGER, 
+        country TEXT,
+        carrierId INTEGER REFERENCES Carriers(id), 
+        deviceId INTEGER REFERENCES Devices(id),
+        longitude REAL, 
+        latitude REAL
         )
         """
     canFail = True
@@ -259,18 +263,12 @@ class Session(Record):
 class Event(Record):
     """ An event in a Specimen game, defined as actions such as game start/end, specimen selection etc. """
     table = "Events"
-    enumTypes = """
-        CREATE TYPE EventType as
-        ENUM
-        (
-        'start game', 'select specimen', 'lose level', 'replay level',
-        'purchase activity', 'win level', 'spectrum cleared', 'share press'
-        )
-        """
     schema = """(
         id INTEGER PRIMARY KEY,
         sessionId INTEGER REFERENCES Sessions(id) on DELETE CASCADE,
-        offsetTimestamp BIGINT, event EventType)
+        offsetTimestamp INTEGER, 
+        event TEXT
+        )
         """
     canFail = False
     indices = [("events_sessionid_idx", "events(sessionid)")]
@@ -295,17 +293,19 @@ class SelectionEvent(Record):
     table = "SelectionEvents"
     schema =  """
         (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         userId INTEGER REFERENCES Users(id) ON DELETE CASCADE,
         eventId INTEGER REFERENCES Events(id) ON DELETE CASCADE,
         playId INTEGER,
-        specimen_r DOUBLE PRECISION, specimen_g DOUBLE PRECISION, specimen_b DOUBLE PRECISION,
-        target_r DOUBLE PRECISION, target_g DOUBLE PRECISION, target_b DOUBLE PRECISION,
-        specimen_h DOUBLE PRECISION, specimen_s DOUBLE PRECISION, specimen_v DOUBLE PRECISION,
-        target_h DOUBLE PRECISION, target_s DOUBLE PRECISION, target_v DOUBLE PRECISION,
-        specimen_lab_l DOUBLE PRECISION, specimen_lab_a DOUBLE PRECISION, specimen_lab_b DOUBLE PRECISION,
-        target_lab_l DOUBLE PRECISION, target_lab_a DOUBLE PRECISION, target_lab_b DOUBLE PRECISION,
-        correct BOOLEAN, pos_x DOUBLE PRECISION, pos_y DOUBLE PRECISION, is_first_pick BOOLEAN
+        specimen_r REAL, specimen_g REAL, specimen_b REAL,
+        target_r REAL, target_g REAL, target_b REAL,
+        specimen_h REAL, specimen_s REAL, specimen_v REAL,
+        target_h REAL, target_s REAL, target_v REAL,
+        specimen_lab_l REAL, specimen_lab_a REAL, specimen_lab_b REAL,
+        target_lab_l REAL, target_lab_a REAL, target_lab_b REAL,
+        correct BOOLEAN, 
+        pos_x REAL, pos_y REAL, 
+        is_first_pick BOOLEAN
         )
     """
     canFail = False
@@ -352,7 +352,7 @@ class SelectionEvent(Record):
 
     def insertionString(self, cursor):
         self.getForeignKeys(cursor)
-        payload = "(default, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" % (
+        payload = "(None, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" % (
             self.userId,
             self.eventId,
             self.playId,
@@ -390,10 +390,10 @@ class PurchaseEvent(Record):
     """ Event triggered when the user buys an item inside the Specimen game """
     table = "PurchaseEvents"
     schema = """(
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         eventId INTEGER REFERENCES Events(id) ON DELETE CASCADE,
         cost INTEGER,
-        itemPurchased VARCHAR(40)
+        itemPurchased TEXT
         )"""
     canFail = False
     indices = [("purchaseevents_eventid_idx", "purchaseevents(eventid)")]
@@ -404,7 +404,7 @@ class PurchaseEvent(Record):
         self.itemPurchased = itemPurchased
 
     def insertionString(self, cursor):
-        payload ="(default, %s, %s, '%s')" % (self.eventId, self.cost, self.itemPurchased,)
+        payload = "(None, %s, %s, '%s')" % (self.eventId, self.cost, self.itemPurchased,)
         return str(payload)
 
     @staticmethod
@@ -415,13 +415,14 @@ class PurchaseEvent(Record):
 class LevelEvent(Record):
     """ Events related to different levels in Specimen """
     table = "LevelEvents"
-    enumTypes = "CREATE TYPE SpectrumEnum AS ENUM ('alpha', 'beta', 'delta', 'epsilon', 'gamma', 'zeta')"
     schema = """
         (
         id SERIAL PRIMARY KEY,
         eventId INTEGER REFERENCES Events(id) ON DELETE CASCADE,
-        spectrum SpectrumEnum, level SMALLINT,
-        score BIGINT, boosterUsed BOOLEAN
+        spectrum TEXT, 
+        level INTEGER,
+        score INTEGER, 
+        boosterUsed BOOLEAN
         )
     """
     canFail = False
@@ -435,7 +436,7 @@ class LevelEvent(Record):
         self.boosterUsed = boosterUsed
 
     def insertionString(self, cursor):
-        payload ="(default, %s, '%s', %s, %s, %s)" % (self.eventId, self.spectrum, self.level, self.score, self.boosterUsed,)
+        payload ="(None, %s, '%s', %s, %s, %s)" % (self.eventId, self.spectrum, self.level, self.score, self.boosterUsed,)
         return str(payload)
 
     @staticmethod
