@@ -27,13 +27,17 @@ import sqlite3 as db
 import dbtypes
 from specimen import utils
 
+def read_sql(sql, conn):
+    # read sql with pandas but make sure column names are lowercase
+    df = pd.read_sql(sql, conn)
+    df.columns = df.columns.map(lambda x: x.lower())
+    return df
 
 class SpecimenQueries:
     """
     Contains helpful specimen database queries. Should be used as a starting point for analysis of specimen
     data.
     """
-    DB_NAME = "specimen"
 
     def __init__(self, database_path=None):
         """
@@ -123,7 +127,7 @@ class SpecimenQueries:
         )
         cursor.close()
 
-        result = pd.read_sql_query('SELECT * FROM user_and_likely_country', self.conn)
+        result = read_sql('SELECT * FROM user_and_likely_country', self.conn)
         self.cache[key] = result.copy()
         return result
 
@@ -152,7 +156,7 @@ class SpecimenQueries:
         WHERE id IN (%s) AND offsettimestamp >= 0
         """
 
-        ts = pd.read_sql_query(ts_query % event_ids, self.conn)
+        ts = read_sql(ts_query % event_ids, self.conn)
 
         # adds additional information such as user id, and session id for matching up timestamps
         if get_extra_info:
@@ -161,7 +165,7 @@ class SpecimenQueries:
             FROM events, sessions
             WHERE events.sessionid = sessions.id AND events.id IN (%s)
             """
-            extra_info_df = pd.read_sql_query(extra_info_query % event_ids, self.conn)
+            extra_info_df = read_sql(extra_info_query % event_ids, self.conn)
             ts = ts.merge(extra_info_df, how='left', on='id')
 
         self.cache[key] = ts.copy()
@@ -193,7 +197,7 @@ class SpecimenQueries:
         sessions.deviceid = devices.id
         """ % event_ids
 
-        devices_df = pd.read_sql_query(devices_query, self.conn)
+        devices_df = read_sql(devices_query, self.conn)
         self.cache[key] = devices_df.copy()
         return devices_df
 
@@ -292,11 +296,11 @@ class SpecimenQueries:
 
         # filter to type of selections requested
         if which == 'all':
-            results = pd.read_sql_query('SELECT * FROM first_sels', self.conn)
+            results = read_sql('SELECT * FROM first_sels', self.conn)
         elif which == 'correct':
-            results = pd.read_sql_query('SELECT * FROM first_sels WHERE correct', self.conn)
+            results = read_sql('SELECT * FROM first_sels WHERE correct', self.conn)
         else:
-            results = pd.read_sql_query('SELECT * FROM first_sels WHERE NOT correct', self.conn)
+            results = read_sql('SELECT * FROM first_sels WHERE NOT correct', self.conn)
 
         self.cache[key] = results.copy()
 
@@ -312,7 +316,7 @@ class SpecimenQueries:
         if use_cache and key in self.cache:
             return self.cache[key].copy()
 
-        results = pd.read_sql_query(query, self.conn)
+        results = read_sql(query, self.conn)
         self.cache[key] = results.copy()
         return results
 
