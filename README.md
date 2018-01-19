@@ -33,7 +33,7 @@ Assuming you have satisfied the requirements above,
 in order to install `specimen-tools`, you can use `pip`
 
 ```
-pip install specimen-tools
+sudo pip install specimen-tools
 ```
 
 Or you can copy this repository and build locally
