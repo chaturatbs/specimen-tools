@@ -82,7 +82,7 @@ def main(data_dir, db_name, _buffer, cache):
 if __name__ == "__main__":
     argparser = ArgumentParser(description='Populates specimen database from directory of raw json/csv Specimen data files')
     argparser.add_argument('data_dir', help='Directory with json/csv files to use for population')
-    argparser.add_argument('db_name', help='Postgres database name (created if it doesnt exist)')
+    argparser.add_argument('db_name', help='SQLite database name (created if it doesnt exist)')
     argparser.add_argument('--buffer', type=int, help='Buffer size in number of records', default=20000)
     argparser.add_argument('--cache', type=int, help='Cache limit for keeping in-memory foreign key references', default=40000)
     args = argparser.parse_args()
