@@ -27,6 +27,16 @@ the same command is `sudo brew install sqlite3`.
 
 The necessary Python libraries are installed automatically.
 
+Make sure that your `python` and `pip` are linked to the correct
+version. You can check this by calling
+
+```
+pip --version
+python --version
+```
+
+in both cases, the Python major version should correspond to 2.7.
+
 
 # Installation and Basic Usage
 Assuming you have satisfied the requirements above,
@@ -41,7 +51,7 @@ Or you can copy this repository and build locally
 ```
 git clone https://github.com/josepablocam/specimen-tools.git
 cd specimen-tools/
-sudo pip install -e .
+pip install -e .
 ```
 
 This installs the `specimen` module. Note that this does not build
