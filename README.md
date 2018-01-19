@@ -39,7 +39,7 @@ Or you can copy this repository and build locally
 ```
 git clone git@github.com:josepablocam/specimen-tools.git
 cd specimen-tools/
-pip install -e .
+sudo pip install -e .
 ```
 
 This installs the `specimen` module. Note that this does not build
