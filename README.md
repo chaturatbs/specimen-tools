@@ -37,7 +37,7 @@ pip install specimen-tools
 Or you can copy this repository and build locally
 
 ```
-git clone git@github.com:josepablocam/specimen-tools.git
+git clone https://github.com/josepablocam/specimen-tools.git
 cd specimen-tools/
 pip install -e .
 ```
