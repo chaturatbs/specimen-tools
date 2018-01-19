@@ -21,7 +21,9 @@ related to research or open-source experimentation are encouraged.
 Most *nix systems come with SQLite installed, and should satisfy this
 requirement with no additional work. If this is not the case, please
 see [SQlite](https://sqlite.org/) for the appropriate way to install 
-on your system.
+on your system. On Linux, this should be as simple as
+`sudo apt-get install sqlite3`. On Mac OSX, with homebrew,
+the same command is `sudo brew install sqlite3`.
 
 The necessary Python libraries are installed automatically.
 
