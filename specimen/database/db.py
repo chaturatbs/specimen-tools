@@ -49,7 +49,7 @@ class Database:
         _cursor.close()
         self.cacheLimit = cacheLimit
         # object for specimen database queries (e.g. for unknown user id)
-        self.specimen_queries = SpecimenQueries(database_name=name)
+        self.specimen_queries = SpecimenQueries(database_path=name)
 
     def flush(self):
         """
