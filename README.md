@@ -62,6 +62,17 @@ to the raw Specimen data to build the database. The database
 built is a SQLite database, which means it is serverless and
 consists of a single file.
 
+# Troubleshooting
+If you are having issues getting `specimen-tools` to work, here are a couple
+of quick things you might want to check:
+
+* Version for `python/pip` 2.7.* (`python --version` and `pip --version`)
+* Location where `pip` has installed `specimen-tools` (`pip show specimen-tools`). This same
+  location should be part of `sys.path`. You can check this in the Python interpreter: `import sys; sys.path`.
+* If you built the package from source, try removing it and instead installing using PyPI
+  `pip install specimen-tools`
+
+If none of these reveal an issue, please reach out to jcamsan@mit.edu for additional assistance.
 
 ## Acknowledgements
 We thank Erica Gorochow, Salvatore Randazzo, and Charlie Whitney
