@@ -15,7 +15,7 @@ related to research or open-source experimentation are encouraged.
 # Requirements
 `specimen-tools` assumes you have access to:
 
-* Python 2.*
+* Python 2.7 (though it may work with other versions of Python 2.*)
 * SQLite
 
 Most *nix systems come with SQLite installed, and should satisfy this
