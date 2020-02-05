@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import sqlite3 as db
 
-import dbtypes
+from . import dbtypes
 from specimen import utils
 
 def read_sql(sql, conn):
@@ -152,7 +152,7 @@ class SpecimenQueries:
 
         :param event_ids: list of event ids to query
         """
-        print "Warning: This is only valid for data from the json files! Timestamps in csv are dummies"
+        print("Warning: This is only valid for data from the json files! Timestamps in csv are dummies")
         if event_ids is None:
             raise ValueError('Must provide event ids ts')
 
@@ -256,8 +256,8 @@ class SpecimenQueries:
         added = ""
         if add_fields:
             if not isinstance(add_fields, dict):
-                add_fields = dict(zip(add_fields, add_fields))
-            added = ", " + (".".join(["%s as %s" % (f,n) for f, n in add_fields.iteritems()]))
+                add_fields = dict(list(zip(add_fields, add_fields)))
+            added = ", " + (".".join(["%s as %s" % (f,n) for f, n in add_fields.items()]))
 
         cursor = self.conn.cursor()
 
@@ -265,7 +265,7 @@ class SpecimenQueries:
         unknown_user_id = self._get_unknown_userid()
 
         # filter to base data consisting of first-turns in play for known user ids
-        print "Filtering down to first-turns in a play"
+        print("Filtering down to first-turns in a play")
         cursor.execute("""
         -- compute the smallest eventid associated with each playid
         CREATE TEMP TABLE sel_cts AS
@@ -275,7 +275,7 @@ class SpecimenQueries:
             GROUP BY playid
         """ % unknown_user_id)
 
-        print "Retrieving selection information for those turns"
+        print("Retrieving selection information for those turns")
         cursor.execute("""
         -- use this min eventid to select the first choice in each round
         CREATE TEMP TABLE first_sels AS

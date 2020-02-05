@@ -45,10 +45,10 @@ def color_pairs_plot(*args, **kwargs):
         return _color_pairs_plot_tupled(*args, **kwargs)
 
 def _color_pairs_plot_rgb(r1, g1, b1, r2, g2, b2, **kwargs):
-    return _color_pairs_plot_sep(zip(r1, g1, b1), zip(r2, g2, b2), **kwargs)
+    return _color_pairs_plot_sep(list(zip(r1, g1, b1)), list(zip(r2, g2, b2)), **kwargs)
 
 def _color_pairs_plot_sep(color1, color2, **kwargs):
-    return _color_pairs_plot_tupled(zip(color1, color2), **kwargs)
+    return _color_pairs_plot_tupled(list(zip(color1, color2)), **kwargs)
 
 def _color_pairs_plot_tupled(rgb_pairs, **kwargs):
     groups = kwargs.get('groups', 1)
@@ -112,7 +112,7 @@ def smash(x, min_v = 0.0, max_v = 1.0):
 
 def plot_along_hue(hues, y, ax = None, normalize = False, **kwargs):
     # normalize x coordinates
-    if normalize or max(map(lambda x: x > 1.0, hues)):
+    if normalize or max([x > 1.0 for x in hues]):
         hues = [h / 360.0 for h in hues]
     # create "fake" HSV color with full saturation and value, but same hue as point
     hsv_colors = [(h, 1, 1) for h in hues]
@@ -133,15 +133,15 @@ def chromaticity_scatter(colors, cs = None, marker = '*', converter = lambda x: 
     if ax == None:
         ax = _spectral_locus()
     # convert every color to XYZ
-    XYZ = map(converter, colors)
+    XYZ = list(map(converter, colors))
     # now convert every XYZ to x,y pairs
     # check if we can iterate over points
     try:
-        map(lambda x: x, XYZ[0])
+        list(map(lambda x: x, XYZ[0]))
     except:
-        XYZ = map(lambda x: x.get_value_tuple(), XYZ)
-    xyz = [map(lambda x: x / sum(pt), pt) for pt in XYZ]
-    xs,ys,_ = zip(*xyz)
+        XYZ = [x.get_value_tuple() for x in XYZ]
+    xyz = [[x / sum(pt) for x in pt] for pt in XYZ]
+    xs,ys,_ = list(zip(*xyz))
     # create group colors if provided else sets to red
     if not cs:
         cs = 'red'
@@ -165,7 +165,7 @@ def _spectral_locus():
         xs.append(XYZ[0] / denom)
         ys.append(XYZ[1] / denom)
     fig, ax = plt.subplots()
-    poly = Polygon(np.array(zip(xs, ys)), fill = False, closed= True)
+    poly = Polygon(np.array(list(zip(xs, ys))), fill = False, closed= True)
     ax.add_patch(poly)
     return ax
 

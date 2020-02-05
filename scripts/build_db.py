@@ -30,8 +30,8 @@ from specimen.database.dbtypes import *
 
 
 def populate(db_name, data_dir, bufferSize, cacheLimit):
-    print "Parsing files in directory %s " % data_dir
-    print "Writing to SQLITE Database(%s) with buffer limit = %s and cache limit = %s" % (db_name, bufferSize, cacheLimit)
+    print("Parsing files in directory %s " % data_dir)
+    print("Writing to SQLITE Database(%s) with buffer limit = %s and cache limit = %s" % (db_name, bufferSize, cacheLimit))
 
     rectypes = [User, Device, Carrier, Session, Event, SelectionEvent, PurchaseEvent, LevelEvent]
     db = db_def.Database(db_name, rectypes, bufferSize, cacheLimit)
@@ -62,10 +62,10 @@ def populate(db_name, data_dir, bufferSize, cacheLimit):
             elif ending == "csv":
                 csvparser.parse(full_file_name)
             else:
-                print "Unable to parse files with ending: %s (%s)" % (ending, full_file_name)
+                print("Unable to parse files with ending: %s (%s)" % (ending, full_file_name))
         except Exception as e:
-            print "==> Failed to parse %s" % full_file_name
-            print e.message
+            print("==> Failed to parse %s" % full_file_name)
+            print(e.message)
             # start fresh for next file
             db.clear()
 

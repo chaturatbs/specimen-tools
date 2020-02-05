@@ -27,12 +27,11 @@ import sys
 import sqlite3 as dbms
 
 
-class Record(object):
+class Record(object, metaclass=ABCMeta):
     """
     Abstract class that all database tuples should extend. The expectation is that
     each table has its own class of tuples associated with it.
     """
-    __metaclass__ = ABCMeta
     @property
     @abstractmethod
     def table(self):
@@ -80,7 +79,7 @@ class ForeignKeyResolver:
                 cursor.execute(payload)
                 ref = cursor.fetchone()[0]
             except Exception:
-                print "Reference lookup error on %s" % payload
+                print("Reference lookup error on %s" % payload)
             cache[target] = ref
         return ref
 

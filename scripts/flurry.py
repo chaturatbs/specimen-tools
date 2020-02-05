@@ -75,7 +75,7 @@ class SpecimenDownloader:
         end_date = self.date_to_flurry(end_date)
         params['intervalCut'] = "customInterval%s-%s" % (start_date, end_date)
 
-        print "Requesting %s-%s" % (start_date, end_date)
+        print("Requesting %s-%s" % (start_date, end_date))
         download = self.session.get("https://dev.flurry.com/eventsLogCsv.do", params = params)
         if download.ok:
             file_name = os.path.join(dir, "specimen-%s-%s.csv" % (start_date, end_date))
@@ -108,7 +108,7 @@ class SpecimenDownloader:
 
     def download(self, start_date, end_date, dir_name):
         """ Download all csv reports between start and end date and store to dir directory"""
-        print "Downloading daily csv files [%s, %s] to %s" % (start_date, end_date, dir_name)
+        print("Downloading daily csv files [%s, %s] to %s" % (start_date, end_date, dir_name))
         start_date = self.check_input_date(start_date)
         end_date = self.check_input_date(end_date)
         self.login()
@@ -117,7 +117,7 @@ class SpecimenDownloader:
             try:
                 self.__download__(start, end, dir_name)
             except Exception as e:
-                print e.message
+                print(e.message)
 
 def main(args):
     downloader = SpecimenDownloader(args.email, args.password)

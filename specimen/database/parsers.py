@@ -29,7 +29,7 @@ import colorsys
 from colormath.color_objects import LabColor, sRGBColor
 from colormath.color_conversions import convert_color
 
-from dbtypes import *
+from .dbtypes import *
 from specimen import utils
 
 
@@ -70,7 +70,7 @@ class AbstractSpecimenParser(object):
         self.session_id = self.get_next_id("sessions")
         self.event_id = self.get_next_id("events")
         self.play_id = self.get_next_id("selectionevents", col="playid")
-        print "Updated parser state. session id: %s, event id: %s, play id: %s" % (self.session_id, self.event_id, self.play_id)
+        print("Updated parser state. session id: %s, event id: %s, play id: %s" % (self.session_id, self.event_id, self.play_id))
         # keep track of these in case we need to delete data
         self.start_session_id = self.session_id
         self.start_event_id = self.event_id
@@ -142,7 +142,7 @@ class JsonSpecimenParser(AbstractSpecimenParser):
         super(JsonSpecimenParser, self).get_state_info()
 
         # brings contents of entire file into memory for processing!
-        print "Parsing %s" % file_name
+        print("Parsing %s" % file_name)
         with open(file_name, 'r') as f:
             raw_data = f.read()
         raw_data = json.loads(raw_data)
@@ -212,12 +212,12 @@ class JsonSpecimenParser(AbstractSpecimenParser):
 
     def parse_selection_event(self, log, eventId, uniqueId):
         params = log['p']
-        specimen_rgb = map(float, params['specimen_color'].strip("()").split(","))
+        specimen_rgb = list(map(float, params['specimen_color'].strip("()").split(",")))
         specimen_hsv = colorsys.rgb_to_hsv(*specimen_rgb)
         specimen_lab = utils.rgb_to_lab(*specimen_rgb)
         correct = 0
         try:
-            target_rgb = map(float, params['target_color'].strip("()").split(","))
+            target_rgb = list(map(float, params['target_color'].strip("()").split(",")))
             target_hsv = colorsys.rgb_to_hsv(*target_rgb)
             target_lab = utils.rgb_to_lab(*target_rgb)
         except (KeyError, AttributeError):
@@ -302,7 +302,7 @@ class CsvSpecimenParser(AbstractSpecimenParser):
 
         # all lines in a given csv file are assumed to be part of one giant session by the same
         # anonymous user
-        print "Parsing file %s" % file_name
+        print("Parsing file %s" % file_name)
         with open(file_name, 'r') as f:
             # skip header row
             f.readline()
@@ -389,12 +389,12 @@ class CsvSpecimenParser(AbstractSpecimenParser):
 
     def parse_selection_event(self, line, eventId, uniqueId):
         params = line[8]
-        specimen_rgb = map(float, params['specimen_color'].strip("()").split(","))
+        specimen_rgb = list(map(float, params['specimen_color'].strip("()").split(",")))
         specimen_hsv = colorsys.rgb_to_hsv(*specimen_rgb)
         specimen_lab = utils.rgb_to_lab(*specimen_rgb)
         correct = 0
         try:
-            target_rgb = map(float, params['target_color'].strip("()").split(","))
+            target_rgb = list(map(float, params['target_color'].strip("()").split(",")))
             target_hsv = colorsys.rgb_to_hsv(*target_rgb)
             target_lab = utils.rgb_to_lab(*target_rgb)
         except (KeyError, AttributeError):

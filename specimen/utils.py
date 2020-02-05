@@ -37,7 +37,7 @@ def is_iterable(x):
         return False
 
 def flatten_list(l):
-    if l and is_iterable(l) and is_iterable(l[0]) and not (isinstance(l[0], str) or isinstance(l[0], unicode)):
+    if l and is_iterable(l) and is_iterable(l[0]) and not (isinstance(l[0], str) or isinstance(l[0], str)):
         return [item for sublist in l for item in sublist]
     else:
         return l
@@ -80,7 +80,7 @@ def _get_hue_pair_map():
   pairs += [(h, h) for h in munsell_hue_labels]
   pairs = {p:p for p in pairs}
   # reverses pairs
-  pairs.update({(h2, h1):mapped for (h1, h2), mapped in pairs.iteritems()})
+  pairs.update({(h2, h1):mapped for (h1, h2), mapped in pairs.items()})
   return pairs
 
 munsell_pair_map = _get_hue_pair_map()
@@ -93,9 +93,9 @@ def get_full_country_name(iso_code, override = None):
     :return:
     """
     if not override is None and iso_code in override:
-        return unicode(override[iso_code])
+        return str(override[iso_code])
     else:
-        return unicode(pycountry.countries.get(alpha_2 = iso_code).name)
+        return str(pycountry.countries.get(alpha_2 = iso_code).name)
 
 def rgb_to_lab(r, g, b):
     rgb = sRGBColor(r, g, b)
@@ -114,7 +114,7 @@ def df_rgb_to_lab(df):
   rgb = list('rgb')
   df = df[rgb]
   f_star = lambda x: list(rgb_to_lab(*x))
-  return df.apply(f_star, axis=1).rename(columns=dict(zip(rgb, 'lab')))
+  return df.apply(f_star, axis=1).rename(columns=dict(list(zip(rgb, 'lab'))))
 
 def mat_rgb_to_lab(mat):
   f_star = lambda x: list(rgb_to_lab(*x))

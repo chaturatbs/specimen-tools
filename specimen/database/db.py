@@ -28,7 +28,7 @@ import sys
 #import psycopg2 as dbms
 import sqlite3 as dbms
 
-from queries import SpecimenQueries
+from .queries import SpecimenQueries
 
 
 class Database:
@@ -57,7 +57,7 @@ class Database:
         :return:
         """
         # split writes by table
-        print "[%s] Performing flush to database" % datetime.datetime.now()
+        print("[%s] Performing flush to database" % datetime.datetime.now())
         currentTable = None
         currentBatch = deque()
         while self.buffer:
@@ -113,8 +113,8 @@ class Database:
                 self.__write(cursor, recType.table, joined)
             except dbms.DatabaseError as e:
                 # if there was a database error we're better off just killing the process
-                print e.message
-                print joined
+                print(e.message)
+                print(joined)
                 sys.exit(1)
         cursor.close()
 
@@ -156,11 +156,11 @@ class Database:
         cursor = self.conn.cursor()
         for recordType in self.recordTypes:
             table = recordType.table
-            print "Creating table %s" % table
+            print("Creating table %s" % table)
             cursor.execute("CREATE TABLE %s %s" % (table, recordType.schema))
             if recordType.init():
                 # some tables may need an initial record for stub values
-                print "Inserting initial dummy record for %s" % table
+                print("Inserting initial dummy record for %s" % table)
                 self.__writeBatch([recordType.init()])
         cursor.close()
 
@@ -173,7 +173,7 @@ class Database:
         for recordType in self.recordTypes:
             try:
                 for (name, definition) in recordType.indices:
-                    print "Creating index %s" % name
+                    print("Creating index %s" % name)
                     cursor.execute("CREATE INDEX %s ON %s" % (name, definition))
             except (AttributeError, dbms.ProgrammingError):
                 # didn't have indices or already declared
@@ -189,7 +189,7 @@ class Database:
         for recordType in self.recordTypes:
             try:
                 for (name, _) in recordType.indices:
-                    print "Dropping index %s" % name
+                    print("Dropping index %s" % name)
                     cursor.execute("DROP INDEX %s" % name)
             except (AttributeError, dbms.ProgrammingError, dbms.OperationalError):
                 # didn't have indices or already declared
@@ -198,7 +198,7 @@ class Database:
 
     def build_stats(self):
         """ Update the database statistics """
-        print "Updating database statistics"
+        print("Updating database statistics")
         cursor = self.conn.cursor()
         cursor.execute("ANALYZE")
         cursor.close()
@@ -210,7 +210,7 @@ class Database:
         If it is run on an empty database, it will likely fail (or produce incorrect effects).
         
         """
-        print "Removing duplicate sessions and related records"
+        print("Removing duplicate sessions and related records")
         unknown_user_id = self.specimen_queries._get_unknown_userid()
 
         rm_query = """
